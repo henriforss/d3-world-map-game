@@ -1,6 +1,6 @@
 /* Define svg-size. */
-const width = window.innerWidth - 16
-const height = window.innerHeight - 140
+const width = window.innerWidth - 18
+const height = window.innerHeight - 170
 
 /* Define scaleFactor. */
 const scaleFactor = 0.355 * height
@@ -9,6 +9,7 @@ const scaleFactor = 0.355 * height
 let allCountries = []
 let randomCountry = ""
 let playerScore = 0
+let triesLeft = 3
 
 /* Create svg-element. */
 const svg = d3.select("#svg")
@@ -16,7 +17,7 @@ const svg = d3.select("#svg")
   .attr("width", width)
   .attr("height", height)
 
-  /* Define projection. */
+/* Define projection. */
 const projection = d3.geoNaturalEarth1()
   .scale(scaleFactor)
   .translate([width/2, height/2])
@@ -39,7 +40,7 @@ const zoom = d3.zoom()
   .translateExtent([[-1000, 0], [2000, height]])
   .on("zoom", handleZoom)
 
-  /* Define initZoom. */
+/* Define initZoom. */
 const initZoom = () => {
   d3.select("svg")
     .call(zoom)
@@ -58,29 +59,48 @@ const createMap = async () => {
     .enter()
     .append("path")
     .attr("class", "country")
+    .attr("fill", "lightgreen")
     .attr("name", (d, i) => {
       allCountriesTemp.push(d.properties.name)
       return d.properties.name
     })
     .attr("d", path)
-    .on("click", (event, d) => {
-      const clickedCountry = d.properties.name
-      checkHit(clickedCountry)
-    })
+    .on("click", checkHit)
 
   return allCountriesTemp
 }
 
 /* Define checkHit. */
-const checkHit = (clickedCountry) => {
+function checkHit() {
+  const clickedCountry = d3.select(this).attr("name")
+
   if (clickedCountry == randomCountry) {
     playerScore += 1
     setRandomCountry(allCountries)
     countryToFindElement.innerText = `Find: ${randomCountry}`
     scoreElement.innerText = `Score: ${playerScore}`
     youClickedElement.innerText = "Correct!"
+    d3.select(this).attr("fill", "green")
+    allCountries = allCountries.filter((country) => country != clickedCountry)
+    triesLeft = 3
+    triesElement.innerText = `Tries left: ${triesLeft}`
   } else {
     youClickedElement.innerText = `You clicked: ${clickedCountry}`
+    d3.select(this).attr("fill", "red")
+    setTimeout(() => {
+      d3.select(this).attr("fill", "lightgreen")
+    }, 500)
+    triesLeft -= 1
+    triesElement.innerText = `Tries left: ${triesLeft}`
+    if (triesLeft == 0) {
+      d3.selectAll("div").remove()
+      d3.select("body")
+        .append("div")
+        .attr("id", "gameover")
+        .html(() => {
+          return `GAME OVER<br/>You received ${playerScore} points`
+        })
+    }
   }
 }
 
@@ -112,6 +132,12 @@ const score = document.getElementById("score")
 const scoreElement = document.createElement("p")
 score.appendChild(scoreElement)
 scoreElement.innerText = `Score: ${playerScore}`
+
+/* Create p-element for tries left. */
+const tries = document.getElementById("triesleft")
+const triesElement = document.createElement("p")
+tries.appendChild(triesElement)
+triesElement.innerText = `Tries left: ${triesLeft}`
 
 /* Execute game(). */
 game()
