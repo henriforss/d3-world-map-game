@@ -10,6 +10,7 @@ let allCountries = []
 let randomCountry = ""
 let playerScore = 0
 let triesLeft = 3
+let theGameIsover = false
 
 /* Create svg-element. */
 const svg = d3.select("#svg")
@@ -36,7 +37,7 @@ const handleZoom = (e) => {
 
 /* Define zoom. */
 const zoom = d3.zoom()
-  .scaleExtent([1, 5])
+  .scaleExtent([1, 50])
   .translateExtent([[-1000, 0], [2000, height]])
   .on("zoom", handleZoom)
 
@@ -73,35 +74,54 @@ const createMap = async () => {
 /* Define checkHit. */
 function checkHit() {
   const clickedCountry = d3.select(this).attr("name")
+  const clickedCountryColor = d3.select(this).attr("fill")
 
-  if (clickedCountry == randomCountry) {
-    playerScore += 1
-    setRandomCountry(allCountries)
-    countryToFindElement.innerText = `Find: ${randomCountry}`
-    scoreElement.innerText = `Score: ${playerScore}`
-    youClickedElement.innerText = "Correct!"
-    d3.select(this).attr("fill", "green")
-    allCountries = allCountries.filter((country) => country != clickedCountry)
-    triesLeft = 3
-    triesElement.innerText = `Tries left: ${triesLeft}`
-  } else {
-    youClickedElement.innerText = `You clicked: ${clickedCountry}`
-    d3.select(this).attr("fill", "red")
-    setTimeout(() => {
-      d3.select(this).attr("fill", "lightgreen")
-    }, 500)
-    triesLeft -= 1
-    triesElement.innerText = `Tries left: ${triesLeft}`
-    if (triesLeft == 0) {
-      d3.selectAll("div").remove()
-      d3.select("body")
-        .append("div")
-        .attr("id", "gameover")
-        .html(() => {
-          return `GAME OVER<br/>You received ${playerScore} points`
-        })
+  if (theGameIsover == false) {
+    if (clickedCountryColor == "lightgreen") {
+      if (clickedCountry == randomCountry) {
+        playerScore += 1
+        setRandomCountry(allCountries)
+        countryToFindElement.innerText = `Find: ${randomCountry}`
+        scoreElement.innerText = `Score: ${playerScore}`
+        youClickedElement.innerText = "Correct!"
+        d3.select(this).attr("fill", "green")
+        allCountries = allCountries.filter((country) => country != clickedCountry)
+        triesLeft = 3
+        triesElement.innerText = `Tries left: ${triesLeft}`
+      } else {
+        youClickedElement.innerText = `You clicked: ${clickedCountry}`
+        d3.select(this).attr("fill", "red")
+        setTimeout(() => {
+          d3.select(this).attr("fill", "lightgreen")
+        }, 500)
+        triesLeft -= 1
+        triesElement.innerText = `Tries left: ${triesLeft}`
+        if (triesLeft == 0) {
+          setTimeout(() => {
+            gameOver()
+          }, 500)
+        }
+      }
     }
   }
+}
+
+/* Define gameOver(). */
+function gameOver() {
+  theGameIsover = true
+
+  d3.select("body")
+    .append("div")
+    .attr("id", "gameover")
+    .html(() => {
+      return `GAME OVER<br/>You received ${playerScore} points<br/>(Click to restart)`
+    })
+    .on("click", restart)
+}
+
+/* Define restart(). */
+function restart() {
+  location.reload()
 }
 
 /* Define setRandomCountry. */
